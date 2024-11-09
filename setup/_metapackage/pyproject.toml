@@ -1,6 +1,6 @@
 [project]
 name = "odoo-addons-oca-account-invoicing"
-version = "17.0.20240930.1"
+version = "17.0.20241109.0"
 dependencies = [
     "odoo-addon-account_invoice_block_payment>=17.0dev,<17.1dev",
     "odoo-addon-account_invoice_blocking>=17.0dev,<17.1dev",
@@ -11,6 +11,7 @@ dependencies = [
     "odoo-addon-account_invoice_section_sale_order>=17.0dev,<17.1dev",
     "odoo-addon-account_invoice_transmit_method>=17.0dev,<17.1dev",
     "odoo-addon-account_invoice_warn_message>=17.0dev,<17.1dev",
+    "odoo-addon-account_move_tier_validation>=17.0dev,<17.1dev",
     "odoo-addon-partner_invoicing_mode>=17.0dev,<17.1dev",
     "odoo-addon-product_form_account_move_line_link>=17.0dev,<17.1dev",
     "odoo-addon-sale_invoicing_date_selection>=17.0dev,<17.1dev",
