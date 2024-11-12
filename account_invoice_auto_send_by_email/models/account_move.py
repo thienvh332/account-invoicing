@@ -21,9 +21,8 @@ class AccountMove(models.Model):
         wiz_ctx = res["context"] or {}
         wiz_ctx["active_model"] = self._name
         wiz_ctx["active_ids"] = self.ids
-        wiz = self.env["account.invoice.send"].with_context(**wiz_ctx).create({})
-        wiz.write(wiz._get_ui_options())
-        return wiz.send_and_print_action()
+        wiz = self.env["account.move.send.wizard"].with_context(**wiz_ctx).create({})
+        return wiz.action_send_and_print()
 
     @api.model
     def _email_invoice_to_send_domain(self):
