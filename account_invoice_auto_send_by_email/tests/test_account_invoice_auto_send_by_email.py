@@ -2,46 +2,48 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 from unittest import mock
 
-from odoo.tests import common
+from odoo.addons.edi_oca.tests.common import EDIBackendCommonComponentRegistryTestCase
 
 
-class TestAccountInvoiceAutoSendByEmail(common.TransactionCase):
+class TestAccountInvoiceAutoSendByEmail(EDIBackendCommonComponentRegistryTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.env = cls.env(
             context=dict(
-                cls.env.context, tracking_disable=True, test_queue_job_no_delay=True
+                cls.env.context, tracking_disable=True, queue_job__no_delay=True
             )
         )
+        cls._load_module_components(cls, "edi_account_oca")
 
         cls.AccountMove = cls.env["account.move"]
         cls.AccountMove.search([]).write({"transmit_method_code": ""})
         cls.company = cls.env.user.company_id
         cls.transmit_method = cls.env.ref("account_invoice_transmit_method.mail")
-        cls.env["account.journal"].create(
+        cls.journal = cls.env["account.journal"].create(
             {"name": "Test sale journal", "type": "sale", "code": "tsj"}
         )
         cls.customer = cls.env.ref("base.res_partner_1")
+        cls.customer.write(
+            {
+                "edi_account_conf_ids": [
+                    (
+                        4,
+                        cls.env.ref(
+                            "account_invoice_auto_send_by_email.edi_conf_send_via_email"
+                        ).id,
+                    )
+                ]
+            }
+        )
         cls.receivable_account = cls.env["account.account"].search(
             [
                 (
-                    "user_type_id",
+                    "account_type",
                     "=",
-                    cls.env.ref("account.data_account_type_receivable").id,
+                    "asset_receivable",
                 ),
-                ("company_id", "=", cls.env.company.id),
-            ],
-            limit=1,
-        )
-        cls.income_account = cls.env["account.account"].search(
-            [
-                (
-                    "user_type_id",
-                    "=",
-                    cls.env.ref("account.data_account_type_current_liabilities").id,
-                ),
-                ("company_id", "=", cls.env.company.id),
+                ("company_ids", "in", [cls.env.company.id]),
             ],
             limit=1,
         )
@@ -58,6 +60,7 @@ class TestAccountInvoiceAutoSendByEmail(common.TransactionCase):
             {
                 "move_type": "out_invoice",
                 "partner_id": cls.customer.id,
+                "invoice_date": "2024-10-05",
                 "partner_bank_id": cls.partner_bank.id,
                 "transmit_method_id": cls.transmit_method.id,
                 "line_ids": [
@@ -71,6 +74,7 @@ class TestAccountInvoiceAutoSendByEmail(common.TransactionCase):
                             "credit": 0,
                             "name": "Some service",
                             "account_id": cls.receivable_account.id,
+                            "invoice_date": "2024-10-05",
                         },
                     ),
                     (
@@ -80,7 +84,7 @@ class TestAccountInvoiceAutoSendByEmail(common.TransactionCase):
                             "debit": 0,
                             "credit": 12,
                             "name": "inv",
-                            "account_id": cls.income_account.id,
+                            "account_id": cls.receivable_account.id,
                         },
                     ),
                 ],

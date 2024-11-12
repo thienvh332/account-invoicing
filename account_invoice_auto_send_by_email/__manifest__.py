@@ -8,10 +8,11 @@
     "category": "Accounting",
     "author": "Camptocamp, Odoo Community Association (OCA)",
     "license": "AGPL-3",
-    "depends": ["account", "account_invoice_transmit_method", "queue_job"],
+    "depends": ["account", "account_invoice_transmit_method", "edi_account_oca"],
     "website": "https://github.com/OCA/account-invoicing",
     "data": [
         "data/ir_cron.xml",
+        "data/edi_configuration.xml",
     ],
     "installable": True,
 }
