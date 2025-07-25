@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from odoo.tests import TransactionCase
 from odoo.tests.common import tagged
@@ -122,8 +122,11 @@ class TestAccountInvoiceMassSendingDirectPrint(TransactionCase):
                 self.action_report.report_name, res_ids=[self.invoice.id], data=None
             )
 
-    def test_render_qweb_pdf_with_direct_print(self):
+    @patch("cups.Connection")
+    def test_render_qweb_pdf_with_direct_print(self, mock_cups_connection):
         """Test print pdf report using `is_direct_print` option"""
+        mock_conn = MagicMock()
+        mock_cups_connection.return_value = mock_conn
         with patch(
             "odoo.addons.base_report_to_printer.models."
             "printing_printer.PrintingPrinter."
@@ -154,6 +157,10 @@ class TestAccountInvoiceMassSendingDirectPrint(TransactionCase):
             document = self.action_report._render_qweb_pdf(
                 self.action_report.report_name, self.invoice.ids
             )
+
+            print("***********************")
+            print(f"[DEBUG] print_document: {print_document}")
+            print(f"[DEBUG] call args: {print_document.call_args_list}")
 
             # Check that the print_document method was called with the correct parameters
             print_document.assert_called_once_with(
