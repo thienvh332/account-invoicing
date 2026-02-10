@@ -6,19 +6,21 @@ from odoo import _, fields, models
 class AccountInvoiceSend(models.TransientModel):
     _inherit = "account.invoice.send"
 
-    exclude_followers = fields.Boolean(
-        default=True,
-        help="If checked, the email will be send only to the invoice "
-        "partner, excluding followers."
-        "\nNote: This functionality only applies for mass sending.",
+    is_direct_print = fields.Boolean(
+        string="Direct Print",
+        default=lambda self: self.env.company.invoice_is_direct_print,
     )
 
     def enqueue_invoices(self):
         active_ids = self._context.get("active_ids")
         invoices = self.env["account.move"].browse(active_ids)
-        invoices_to_send = invoices.mass_sending(
-            template=self.template_id, exclude_followers=self.exclude_followers
-        )
+        params = {
+            "is_print": self.is_print,
+            "is_email": self.is_email,
+            "is_direct_print": self.is_direct_print,
+            "exclude_followers": self.exclude_followers,
+        }
+        invoices_to_send = invoices.mass_sending(self.template_id, **params)
         ineligible_invoices = invoices - invoices_to_send
         title = _("Invoices: Mass sending")
         msg = _(
@@ -57,3 +59,24 @@ class AccountInvoiceSend(models.TransientModel):
                 }
             )
         return notification
+
+    def _print_document(self):
+        self.ensure_one()
+        res = super()._print_document()
+        if self.is_direct_print and "account_invoice_mass_sending" in self._context:
+            res = self.generate_pdf_from_action_report(res)
+        return res
+
+    def generate_pdf_from_action_report(self, action_report):
+        report_ref = action_report["report_name"]
+        context = dict(action_report.get("context", {}))
+
+        res_ids = context.get("active_ids") or [context.get("active_id")]
+        if not res_ids:
+            raise ValueError("No record IDs found in action_report context.")
+
+        report_obj = self.env["ir.actions.report"].with_context(
+            context, is_direct_print=True
+        )
+        report_obj._render_qweb_pdf(report_ref, res_ids)
+        return True
